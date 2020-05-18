@@ -7,7 +7,21 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.pc = 0
+        self.halted = False
+
+    def ram_read(self, address):
+        return self.ram[address]
+
+    def ram_write(self, address, val):
+        self.ram[address] = val
+
+    def halt(self):
+        self.halted = True
+
+    def print_stuff(self, address):
+        print(f'Value: {self.ram_read(address)}')
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +76,20 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        count = 0
+        while not self.halted:
+            print(count)
+            self.load()
+            instruction = self.ram[self.pc]
+            if instruction == 1:
+                self.halt()
+            elif instruction == 71:
+                self.print_stuff(self.ram[self.pc + 1])
+                self.pc += 2
+            elif instruction == 130:
+                self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 3
+            else:
+                print(f'unknown instruction {instruction} at address {self.pc}')
+                break
+            count += 1
