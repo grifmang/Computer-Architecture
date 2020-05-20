@@ -9,6 +9,7 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.pc = 0
+        self.reg = [0] * 8
         self.halted = False
 
     def ram_read(self, address):
@@ -21,28 +22,15 @@ class CPU:
         self.halted = True
 
     def print_stuff(self, address):
-        print(f'Value: {self.ram_read(address)}')
+        print(f'Value: {self.reg[self.ram_read(self.pc+1)]}')
 
-    def mult(self,address_one, address_two):
-        print(address_one)
-        print(address_two)
-        print(address_one * address_two)
+    def mult(self):
+        return self.alu("MUL", self.ram_read(self.pc+1), self.ram_read(self.pc+2))
 
     def load(self, file):
         """Load a program into memory."""
 
         address = 0
-
-        # For now, we've just hardcoded a program:
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
 
         with open(file) as program:
             for instruction in program:
@@ -60,7 +48,7 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
         elif op == 'MUL':
-            pass
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -86,10 +74,7 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        count = 0
         while not self.halted:
-            # print(count)
-            # self.load()
             instruction = self.ram[self.pc]
             if instruction == 1:
                 self.halt()
@@ -97,18 +82,17 @@ class CPU:
                 self.print_stuff(self.ram[self.pc + 1])
                 self.pc += 2
                 # self.pc += instruction >> 8
-            elif instruction == 130:
-                self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+            elif instruction == 0b10000010:
+                print('this is a pita')
+                # self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
                 self.pc += 3
                 # self.pc += instruction >> 8
             elif instruction == 162:
                 print(self.ram)
-                self.mult(self.ram[self.pc + 1], self.ram[self.pc + 2])
-                mask = 0b11000000 & instruction
-                print('mask', mask)
-                # self.pc += instruction >> 8
-                self.pc += 2
+                print(self.reg)
+                self.mult()
+                self.pc += 3
             else:
                 print(f'unknown instruction {instruction} at address {self.pc}')
                 break
-            count += 1
