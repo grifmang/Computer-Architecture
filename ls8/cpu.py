@@ -11,6 +11,8 @@ class CPU:
         self.pc = 0
         self.reg = [0] * 8
         self.halted = False
+        self.sp = 7
+        self.reg[self.sp] = 0xF4
 
     def ram_read(self, address):
         return self.ram[address]
@@ -21,11 +23,26 @@ class CPU:
     def halt(self):
         self.halted = True
 
-    def print_stuff(self, address):
+    def print_stuff(self):
         print(f'Value: {self.reg[self.ram_read(self.pc+1)]}')
 
     def mult(self):
         return self.alu("MUL", self.ram_read(self.pc+1), self.ram_read(self.pc+2))
+
+    def reg_write(self):
+        self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
+
+    def push(self):
+        # print('push pc', self.pc)
+        reg_a = self.ram_read(self.pc+1)
+        self.reg[self.sp] -= 1
+        self.reg[self.sp] = self.reg[reg_a]
+
+    def pop(self):
+        # print('pop pc', self.pc)
+        reg_a = self.ram_read(self.pc+1)
+        self.reg[reg_a] = self.reg[self.sp]
+        self.reg[self.sp] += 1
 
     def load(self, file):
         """Load a program into memory."""
@@ -43,7 +60,6 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
@@ -76,23 +92,23 @@ class CPU:
         """Run the CPU."""
         while not self.halted:
             instruction = self.ram[self.pc]
-            if instruction == 1:
-                self.halt()
-            elif instruction == 71:
-                self.print_stuff(self.ram[self.pc + 1])
-                self.pc += 2
-                # self.pc += instruction >> 8
-            elif instruction == 0b10000010:
-                print('this is a pita')
-                # self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
-                self.pc += 3
-                # self.pc += instruction >> 8
-            elif instruction == 162:
-                print(self.ram)
-                print(self.reg)
-                self.mult()
-                self.pc += 3
+            # print(instruction)
+            # print(self.ram)
+            # print(self.reg)
+
+            function_lookup = {
+                1: {'func': self.halt, 'move': 0},
+                162: {'func': self.mult, 'move': 3},
+                130: {'func': self.reg_write, 'move': 3},
+                69: {'func': self.push, 'move': 2},
+                70: {'func': self.pop, 'move': 2},
+                71: {'func': self.print_stuff, 'move': 2}
+            }
+
+            if instruction in function_lookup:
+                function_lookup[instruction]['func']()
+                self.pc += function_lookup[instruction]['move']
             else:
                 print(f'unknown instruction {instruction} at address {self.pc}')
                 break
+            
