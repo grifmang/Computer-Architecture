@@ -33,15 +33,15 @@ class CPU:
         self.reg[self.ram_read(self.pc+1)] = self.ram_read(self.pc+2)
 
     def push(self):
-        # print('push pc', self.pc)
-        reg_a = self.ram_read(self.pc+1)
         self.reg[self.sp] -= 1
-        self.reg[self.sp] = self.reg[reg_a]
+        reg_a = self.ram_read(self.pc+1)
+        self.ram[self.reg[self.sp]] = self.reg[reg_a]
 
     def pop(self):
-        # print('pop pc', self.pc)
+        if self.reg[self.sp] == 0xF4:
+            return 'Stack is empty'
         reg_a = self.ram_read(self.pc+1)
-        self.reg[reg_a] = self.reg[self.sp]
+        self.reg[reg_a] = self.ram[self.reg[self.sp]]
         self.reg[self.sp] += 1
 
     def load(self, file):
